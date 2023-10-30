@@ -18,3 +18,5 @@ visa-sys = { version = "^0.1.6", features = ["proc"] }
 
 [patch.crates-io]
 #visa-sys = { path = "../../visa-sys" }
+visa-sys = { version = "^0.1.6", git = "https://github.com/cantudo/visa-sys.git", features = ["proc"] }
+
