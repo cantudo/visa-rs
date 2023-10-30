@@ -13,7 +13,7 @@ exclude = ["/expand.rs", "/fetch-doc"]
 readme = "README_Crates_io.MD"
 
 [dependencies]
-visa-sys = "^0.1.4"
+visa-sys = { version = "^0.1.4", git = "https://github.com/cantudo/visa-sys.git" }
 bitflags = "^2.4"
 num_enum = "^0.7"
 visa-rs-proc = { version = "^0.5.0", path = "./visa-rs-proc" }
@@ -24,6 +24,3 @@ anyhow = "^1"
 tokio = { version = "^1", features = ["rt-multi-thread"] }
 env_logger = "^0.10"
 
-
-[patch.crates-io]
-visa-sys = { path = "../visa-sys" }
