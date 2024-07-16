@@ -411,6 +411,18 @@ impl AsResourceManager for DefaultRM {}
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct WeakRM<'a>(session::BorrowedSs<'a>);
 
+impl<'a> From<&'a attribute::AttrRmSession> for WeakRM<'a> {
+    fn from(value: &'a attribute::AttrRmSession) -> Self {
+        Self(unsafe { session::BorrowedSs::borrow_raw(value.clone().into_inner()) })
+    }
+}
+
+impl From<attribute::AttrRmSession> for WeakRM<'static> {
+    fn from(value: attribute::AttrRmSession) -> Self {
+        Self(unsafe { session::BorrowedSs::borrow_raw(value.into_inner()) })
+    }
+}
+
 /// A [`ResourceManager`](AsResourceManager) which close everything on drop
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct DefaultRM(session::OwnedSs);
@@ -453,8 +465,19 @@ pub struct ResList {
     instr_desc: VisaBuf,
 }
 
+impl Iterator for ResList {
+    type Item = Result<ResID>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.find_next() {
+            Ok(o) => o.map(Ok),
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
 impl ResList {
-    /// Returns the next resource from the list of resources found during a previous call to viFindRsrc().
+    /// Returns the next resource from the list of resources found
     pub fn find_next(&mut self) -> Result<Option<ResID>> {
         if self.cnt < 1 {
             return Ok(None);
@@ -471,9 +494,18 @@ impl ResList {
     }
 }
 
+#[repr(transparent)]
 /// Simple wrapper of [std::ffi::CString]
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Clone)]
 pub struct VisaString(CString);
+
+impl std::ops::Deref for VisaString {
+    type Target = CString;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// resource ID
 pub type ResID = VisaString;
@@ -568,12 +600,7 @@ impl PartialEq<enums::attribute::AttrJobId> for JobID {
 
 #[cfg(test)]
 mod test {
-    use std::ffi::CString;
-
-    use crate::{
-        session::{AsRawSs, FromRawSs},
-        AsResourceManager, DefaultRM, *,
-    };
+    use crate::*;
     use anyhow::{bail, Result};
     #[test]
     fn rm_behavior() -> Result<()> {

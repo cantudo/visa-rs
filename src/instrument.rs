@@ -34,9 +34,9 @@ impl std::io::Write for &Instrument {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        self.visa_flush(flags::FlushMode::WRITE_BUF)
+        self.visa_flush(flags::FlushMode::IO_OUT_BUF)
             .map_err(vs_to_io_err)
-        // ? should call flags::FlushMODE::IO_OUT_BUF
+        // Flush the low-level I/O buffer used by viWrite
     }
 }
 
@@ -366,9 +366,13 @@ impl Instrument {
         ))?;
         Ok(ret_cnt as _)
     }
-}
 
-use crate::async_io;
+    /// Sets the size for the formatted I/O and/or low-level I/O communication buffer(s).
+    pub fn set_buf(&self, mask: flags::BufMask, size: usize) -> Result<()> {
+        wrap_raw_error_in_unsafe!(vs::viSetBuf(self.as_raw_ss(), mask.bits(), size as _))?;
+        Ok(())
+    }
+}
 
 impl Instrument {
     /// Reads data from device or interface asynchronously.
